@@ -4,14 +4,6 @@ import java.security.*;
 import javax.crypto.*;
 
 public class EjemploClavePublica {
-    public static KeyPair generarClaves() throws NoSuchAlgorithmException {
-        // Crear un objeto KeyPairGenerator para generar claves
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-        keyGen.initialize(2048);
-
-        // Generar un par de claves
-        return keyGen.generateKeyPair();
-    }
 
     public static byte[] cifrar(String texto, PublicKey clavePublica) throws Exception {
         // Generar una clave simétrica AES
@@ -20,14 +12,14 @@ public class EjemploClavePublica {
         SecretKey claveSimetrica = keyGen.generateKey();
 
         // Crear un objeto Cipher para cifrar con RSA
-        Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+        Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.WRAP_MODE, clavePublica);
 
         // Envolver la clave simétrica con la clave pública
         byte[] claveEnvoltorio = cipher.wrap(claveSimetrica);
 
         // Crear un objeto Cipher para cifrar con AES
-        cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+        cipher = Cipher.getInstance("AES");
         cipher.init(Cipher.ENCRYPT_MODE, claveSimetrica);
 
         // Cifrar el texto
@@ -47,7 +39,7 @@ public class EjemploClavePublica {
         System.arraycopy(datosCifrados, 0, claveEnvoltorio, 0, 256);
 
         // Crear un objeto Cipher para descifrar el envoltorio con RSA
-        Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+        Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.UNWRAP_MODE, clavePrivada);
 
         // Desenvolver la clave simétrica
@@ -59,7 +51,7 @@ public class EjemploClavePublica {
         System.arraycopy(datosCifrados, 256, textoCifrado, 0, longitudTextoCifrado);
 
         // Crear un objeto Cipher para descifrar el texto con AES
-        cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+        cipher = Cipher.getInstance("AES");
         cipher.init(Cipher.DECRYPT_MODE, claveSimetrica);
 
         // Descifrar el texto
@@ -70,7 +62,10 @@ public class EjemploClavePublica {
     public static void main(String[] args) {
         try {
             // Generar un par de claves
-            KeyPair claves = generarClaves();
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+            keyGen.initialize(2048);
+
+            KeyPair claves = keyGen.generateKeyPair();
 
             // Cifrar el texto
             String texto = "Este es un texto secreto";

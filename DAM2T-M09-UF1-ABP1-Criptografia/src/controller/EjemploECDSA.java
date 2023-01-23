@@ -10,7 +10,7 @@ import java.security.Security;
 
 public class EjemploECDSA {
 	public static byte[] firmar(byte[] mensaje, KeyPair clave) throws Exception {
-		Signature firma = Signature.getInstance("SHA256withECDSA", "BC");
+		Signature firma = Signature.getInstance("ECDSA");
 		firma.initSign(clave.getPrivate());
 		firma.update(mensaje);
 		byte[] firmaDigital = firma.sign();
@@ -18,7 +18,7 @@ public class EjemploECDSA {
 	}
 
 	public static boolean verificar(byte[] mensaje, byte[] firmaDigital, KeyPair clave) throws Exception {
-		Signature firma = Signature.getInstance("SHA256withECDSA", "BC");
+		Signature firma = Signature.getInstance("ECDSA");
 		firma.initVerify(clave.getPublic());
 		firma.update(mensaje);
 		return firma.verify(firmaDigital);
@@ -30,7 +30,7 @@ public class EjemploECDSA {
 			Security.addProvider(new BouncyCastleProvider());
 
 			// Generar un par de claves ECDSA
-			KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA", "BC");
+			KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA");
 			keyGen.initialize(256);
 			KeyPair clave = keyGen.generateKeyPair();
 
