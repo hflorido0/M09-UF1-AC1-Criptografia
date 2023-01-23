@@ -1,64 +1,51 @@
 package controller;
 
-import java.security.*;
-import java.security.spec.ECGenParameterSpec;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.Signature;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
+import java.security.Security;
 
 public class EjemploECDSA {
-    public static KeyPair generarClaves() throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, NoSuchProviderException {
-        // Crear un objeto KeyPairGenerator para generar claves
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA", "BC");
+	public static byte[] firmar(byte[] mensaje, KeyPair clave) throws Exception {
+		Signature firma = Signature.getInstance("SHA256withECDSA", "BC");
+		firma.initSign(clave.getPrivate());
+		firma.update(mensaje);
+		byte[] firmaDigital = firma.sign();
+		return firmaDigital;
+	}
 
-        // Especificar los parámetros de la curva elíptica
-        ECGenParameterSpec ecSpec = new ECGenParameterSpec("prime192v1");
-        keyGen.initialize(ecSpec, new SecureRandom());
+	public static boolean verificar(byte[] mensaje, byte[] firmaDigital, KeyPair clave) throws Exception {
+		Signature firma = Signature.getInstance("SHA256withECDSA", "BC");
+		firma.initVerify(clave.getPublic());
+		firma.update(mensaje);
+		return firma.verify(firmaDigital);
+	}
 
-        // Generar un par de claves
-        return keyGen.generateKeyPair();
-    }
+	public static void main(String[] args) {
+		try {
+			// Registrar el proveedor de seguridad BC
+			Security.addProvider(new BouncyCastleProvider());
 
-    public static byte[] generarFirma(byte[] datos, PrivateKey clavePrivada) throws Exception {
-        // Crear un objeto Signature para generar la firma
-        Signature firma = Signature.getInstance("SHA256withECDSA", "BC");
+			// Generar un par de claves ECDSA
+			KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA", "BC");
+			keyGen.initialize(256);
+			KeyPair clave = keyGen.generateKeyPair();
 
-        // Inicializar el objeto Signature con la clave privada
-        firma.initSign(clavePrivada);
-
-        // Proporcionar los datos a firmar
-        firma.update(datos);
-
-        // Generar la firma
-        return firma.sign();
-    }
-
-    public static boolean verificarFirma(byte[] datos, byte[] firma, PublicKey clavePublica) throws Exception {
-        // Crear un objeto Signature para verificar la firma
-        Signature verificador = Signature.getInstance("SHA256withECDSA", "BC");
-
-        // Inicializar el objeto Signature con la clave pública
-        verificador.initVerify(clavePublica);
-
-        // Proporcionar los datos y la firma a verificar
-        verificador.update(datos);
-
-        // Verificar la firma
-        return verificador.verify(firma);
-    }
-
-    public static void main(String[] args) {
-        try {
-            // Generar un par de claves
-            KeyPair claves = generarClaves();
-
-            // Generar una firma
-            byte[] datos = "Este es un texto secreto".getBytes();
-            byte[] firma = generarFirma(datos, claves.getPrivate());
-
-            // Verificar la firma
-            boolean firmaValida = verificarFirma(datos, firma, claves.getPublic());
-
-            System.out.println("Firma válida: " + firmaValida);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+			// Firmar un mensaje
+			byte[] mensaje = "Este es un mensaje secreto".getBytes();
+			byte[] firmaDigital = firmar(mensaje, clave);
+			// Verificar la firma del mensaje
+			boolean esValida = verificar(mensaje, firmaDigital, clave);
+			if (esValida) {
+				System.out.println("La firma es válida");
+			} else {
+				System.out.println("La firma no es válida");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 }
