@@ -39,6 +39,9 @@ public class RSA {
 		}
 	}
 	
+	public String getClaves() {
+		return new String(this.claves.getPublic().getEncoded()) + "#" + new String(this.claves.getPrivate().getEncoded());
+	}
 	
     public String cifrarRSA(String texto) throws Exception {
         // Crear un objeto Cipher para cifrar
