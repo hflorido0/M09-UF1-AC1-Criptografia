@@ -2,6 +2,8 @@ package security;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.Signature;
 
 import javax.crypto.Cipher;
@@ -30,27 +32,33 @@ public class CriptografiaAsimetrica {
 		return firma.verify(firmaDigital.getBytes(StandardCharsets.UTF_8));
 	}
 
-	public String cifrarRSA(String texto, KeyPair claves) throws Exception {
+	public byte[] cifrarRSA(String texto, KeyPair claves) throws Exception {
 		// Crear un objeto Cipher para cifrar
 		Cipher cipher = Cipher.getInstance(Constants.RSA);
 		cipher.init(Cipher.ENCRYPT_MODE, claves.getPublic());
 
 		// Cifrar el texto
 		byte[] textoCifrado = cipher.doFinal(texto.getBytes(StandardCharsets.UTF_8));
-		return new String(textoCifrado);
+		return textoCifrado;
 	}
 
-	public String descifrarRSA(String textoCifrado, KeyPair claves) throws Exception {
+	public String descifrarRSA(byte[] textoCifrado, KeyPair claves) {
 		// Crear un objeto Cipher para descifrar
-		Cipher cipher = Cipher.getInstance(Constants.RSA);
-		cipher.init(Cipher.DECRYPT_MODE, claves.getPrivate());
 
-		// Descifrar el texto
-		byte[] textoDescifrado = cipher.doFinal(textoCifrado.getBytes(StandardCharsets.UTF_8));
-		return new String(textoDescifrado);
+		try {
+			Cipher cipher = Cipher.getInstance(Constants.RSA);
+			cipher.init(Cipher.DECRYPT_MODE, claves.getPrivate());
+
+			// Descifrar el texto
+			byte[] textoDescifrado = cipher.doFinal(textoCifrado);
+			return new String(textoDescifrado);
+		} catch (Exception e) {
+			//System.out.println("ERROR desencriptando");
+		}
+		return "";
 	}
 
-	public String cifrarCP(String texto, KeyPair claves) throws Exception {
+	public byte[] cifrarCP(String texto, PublicKey claves) throws Exception {
 		// Generar una clave simétrica AES
 		KeyGenerator keyGen = KeyGenerator.getInstance(Constants.AES);
 		keyGen.init(256);
@@ -58,7 +66,7 @@ public class CriptografiaAsimetrica {
 
 		// Crear un objeto Cipher para cifrar con RSA
 		Cipher cipher = Cipher.getInstance(Constants.RSA);
-		cipher.init(Cipher.WRAP_MODE, claves.getPublic());
+		cipher.init(Cipher.WRAP_MODE, claves);
 
 		// Envolver la clave simétrica con la clave pública
 		byte[] claveEnvoltorio = cipher.wrap(claveSimetrica);
@@ -75,33 +83,40 @@ public class CriptografiaAsimetrica {
 		System.arraycopy(claveEnvoltorio, 0, resultado, 0, claveEnvoltorio.length);
 		System.arraycopy(textoCifrado, 0, resultado, claveEnvoltorio.length, textoCifrado.length);
 
-		return new String(resultado);
+		return resultado;
 	}
 
-	public String descifrarCP(String datosCifrados, KeyPair claves) throws Exception {
+	public String descifrarCP(byte[] datosCifrados, PrivateKey claves) {
 		// Obtener el envoltorio de clave
-		byte[] claveEnvoltorio = new byte[256];
-		System.arraycopy(datosCifrados, 0, claveEnvoltorio, 0, 256);
 
-		// Crear un objeto Cipher para descifrar el envoltorio con RSA
-		Cipher cipher = Cipher.getInstance(Constants.RSA);
-		cipher.init(Cipher.UNWRAP_MODE, claves.getPrivate());
+		try {
 
-		// Desenvolver la clave simétrica
-		SecretKey claveSimetrica = (SecretKey) cipher.unwrap(claveEnvoltorio, "AES", Cipher.SECRET_KEY);
+			byte[] claveEnvoltorio = new byte[256];
+			System.arraycopy(datosCifrados, 0, claveEnvoltorio, 0, 256);
 
-		// Obtener el texto cifrado
-		int longitudTextoCifrado = datosCifrados.getBytes(StandardCharsets.UTF_8).length - 256;
-		byte[] textoCifrado = new byte[longitudTextoCifrado];
-		System.arraycopy(datosCifrados, 256, textoCifrado, 0, longitudTextoCifrado);
+			// Crear un objeto Cipher para descifrar el envoltorio con RSA
+			Cipher cipher = Cipher.getInstance(Constants.RSA);
+			cipher.init(Cipher.UNWRAP_MODE, claves);
 
-		// Crear un objeto Cipher para descifrar el texto con AES
-		cipher = Cipher.getInstance(Constants.AES);
-		cipher.init(Cipher.DECRYPT_MODE, claveSimetrica);
+			// Desenvolver la clave simétrica
+			SecretKey claveSimetrica = (SecretKey) cipher.unwrap(claveEnvoltorio, "AES", Cipher.SECRET_KEY);
 
-		// Descifrar el texto
-		byte[] textoDescifrado = cipher.doFinal(textoCifrado);
-		return new String(textoDescifrado);
+			// Obtener el texto cifrado
+			int longitudTextoCifrado = datosCifrados.length - 256;
+			byte[] textoCifrado = new byte[longitudTextoCifrado];
+			System.arraycopy(datosCifrados, 256, textoCifrado, 0, longitudTextoCifrado);
+
+			// Crear un objeto Cipher para descifrar el texto con AES
+			cipher = Cipher.getInstance(Constants.AES);
+			cipher.init(Cipher.DECRYPT_MODE, claveSimetrica);
+
+			// Descifrar el texto
+			byte[] textoDescifrado = cipher.doFinal(textoCifrado);
+			return new String(textoDescifrado);
+		} catch (Exception e) {
+			//System.out.println("ERROR desencriptando");
+		}
+		return "";
 	}
 
 }

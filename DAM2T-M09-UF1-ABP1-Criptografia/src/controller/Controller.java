@@ -1,13 +1,13 @@
 package controller;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.security.KeyPair;
 import java.util.Random;
 
 import javax.crypto.SecretKey;
 
 import dao.KeyStoreManager;
-import dao.Reader;
-import dao.Writter;
 import security.CriptografiaAsimetrica;
 import security.CriptografiaSimetrica;
 import security.Hash;
@@ -27,7 +27,7 @@ public class Controller {
 	
 	private static final int FILES = 2;
 	
-	private String[] randoms = {"RSA", "DES", "AES", "ECDSA", "FD", "CP"};
+	private String[] randoms = {"RSA", "DES", "AES", "CP"};
 	
 	public Controller() {
 		this.AES = new CriptografiaSimetrica();
@@ -42,8 +42,14 @@ public class Controller {
 
 	public void init() {
 		String toBeEncripted = "Esto es un mensaje encriptado";
-		generateEncriptedDocuments(toBeEncripted);
-		//decodeEncriptedDocument();
+		try {
+			generateEncriptedDocuments(toBeEncripted);
+			decodeEncriptedDocument();
+			System.out.println("FINISHED");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public void generateEncriptedDocuments(String toBeEncripted) {
@@ -53,93 +59,105 @@ public class Controller {
 		
 		try {
 			for (int count = 1; count <= FILES; count++) {
-				Writter writer = new Writter("files/output" + count + ".txt");
+				
 				StringBuilder result = new StringBuilder();
-				StringBuilder keys = new StringBuilder();
+				
+				KeyPair RSA = this.keyStoreManager.generateKeyPair(Constants.RSA);
+				KeyPair CP = this.keyStoreManager.generateKeyPair(Constants.CLAVEPUBLICA);
+				KeyPair ECDSA = this.keyStoreManager.generateKeyPair(Constants.ECDSA);
+				KeyPair FD = this.keyStoreManager.generateKeyPair(Constants.FIRMADIGITAL);
+				SecretKey DES = this.keyStoreManager.generateSecretKey(Constants.DES);
+				SecretKey AES = this.keyStoreManager.generateSecretKey(Constants.AES);
+				
+				this.keyStoreManager.storeSecretKey(DES, "files/key1-" + count + ".jceks");
+				this.keyStoreManager.storeSecretKey(AES, "files/key2-" + count + ".jceks");
+				this.keyStoreManager.storeKeyPair(CP,  "files/key3-" + count + ".jceks");
+				this.keyStoreManager.storeKeyPair(ECDSA,  "files/key4-" + count + ".jceks");
+				this.keyStoreManager.storeKeyPair(FD,  "files/key5-" + count + ".jceks");
+				this.keyStoreManager.storeKeyPair(RSA,  "files/key6-" + count + ".jceks");
 				
 				for (int i = 0; i < toBeEncripted.split(" ").length; i++) {
+
+					FileOutputStream fos = new FileOutputStream("files/output" + count + "-" + i + ".txt");
 	
 					int rand = random.nextInt(randoms.length);
 					String algoritmo = randoms[rand];
 					
-					KeyPair RSA = this.keyStoreManager.generateKeyPair(Constants.RSA);
-					KeyPair CP = this.keyStoreManager.generateKeyPair(Constants.CLAVEPUBLICA);
-					KeyPair ECDSA = this.keyStoreManager.generateKeyPair(Constants.ECDSA);
-					KeyPair FD = this.keyStoreManager.generateKeyPair(Constants.FIRMADIGITAL);
-					SecretKey DES = this.keyStoreManager.generateSecretKey(Constants.DES);
-					SecretKey AES = this.keyStoreManager.generateSecretKey(Constants.AES);
-					
-					this.keyStoreManager.storeSecretKey(DES, "files/key1-" + count + ".jceks");
-					this.keyStoreManager.storeSecretKey(AES, "files/key2-" + count + ".jceks");
-					this.keyStoreManager.storeKeyPair(CP,  "files/key3-" + count + ".jceks");
-					this.keyStoreManager.storeKeyPair(ECDSA,  "files/key4-" + count + ".jceks");
-					this.keyStoreManager.storeKeyPair(FD,  "files/key5-" + count + ".jceks");
-					this.keyStoreManager.storeKeyPair(RSA,  "files/key6-" + count + ".jceks");
-					
+					byte[] encripted = new byte[] {};
+					System.out.println(algoritmo);
 					
 					switch (algoritmo) {
 						case "RSA": 
-	
-							result.append(this.RSA.cifrarRSA(toBeEncripted.split(" ")[i], RSA) + SEPARATOR);
 							
+							encripted = this.RSA.cifrarRSA(toBeEncripted.split(" ")[i], RSA);
+							System.out.println(this.RSA.descifrarRSA(encripted, RSA));
 							break;
 						case "DES":
 
-							result.append(this.DES.cifrar(toBeEncripted.split(" ")[i], DES, Constants.DES) + SEPARATOR);
+							encripted = this.DES.cifrar(toBeEncripted.split(" ")[i], DES, Constants.DES);
+							System.out.println(encripted);
+							System.out.println(this.DES.descifrar(encripted, DES, Constants.DES));
 							
 							break;
 						case "AES":
 
-							result.append(this.AES.cifrar(toBeEncripted.split(" ")[i], AES, Constants.AES) + SEPARATOR);
+							encripted = this.AES.cifrar(toBeEncripted.split(" ")[i], AES, Constants.AES);
+							System.out.println(encripted);
+							System.out.println(this.AES.descifrar(encripted,  AES, Constants.AES));
 							
 							break;
 						case "ECDSA":
 
-							result.append(this.ECDSA.firmar(toBeEncripted.split(" ")[i], ECDSA, Constants.ECDSA) + SEPARATOR);
+							//encripted = this.ECDSA.firmar(toBeEncripted.split(" ")[i], ECDSA, Constants.ECDSA);
+							//System.out.println(this.RSA.descifrarRSA(encripted,  this.keyStoreManager.generateKeyPair(Constants.RSA)));
 							
 							break;
 						case "FD":
 
-							result.append(this.firmaDigital.firmar(toBeEncripted.split(" ")[i], FD, Constants.FIRMADIGITAL) + SEPARATOR);
+							//encripted = this.firmaDigital.firmar(toBeEncripted.split(" ")[i], FD, Constants.FIRMADIGITAL);
+							//System.out.println(this.RSA.descifrarRSA(encripted,  this.keyStoreManager.generateKeyPair(Constants.RSA)));
 							
 							break;
 						case "CP":
 
-							result.append(this.clavePublica.cifrarCP(toBeEncripted.split(" ")[i], CP) + SEPARATOR);
+							encripted = this.clavePublica.cifrarCP(toBeEncripted.split(" ")[i], CP.getPublic());
+							System.out.println(this.RSA.descifrarCP(encripted, CP.getPrivate()));
 							
 							break;
 					}
 					
+					fos.write(encripted);
+					fos.close();
 				}
-				writer.write(keys.toString());
-				writer.write(result.toString());
-				writer.closeFile();
+				System.out.println("-------------");
 			}
 		}catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 	
-	private void decodeEncriptedDocument() {
+	private void decodeEncriptedDocument() throws Exception {
 		for (int count = 1; count <= FILES; count++) {
-			Reader reader = new Reader("files/output" + count + ".txt");
-			
-			StringBuilder text = new StringBuilder();
-			String line = "";
-			
-			while (( line = reader.read()) != null) {
-				text.append(line);
-			}
-			
-			String keys = text.toString().split(SEPARATOR)[0];
-			
-			String[] values = keys.split("--->");
 
+			SecretKey DES = this.keyStoreManager.getSecretKey("files/key1-" + count + ".jceks");
+			SecretKey AES = this.keyStoreManager.getSecretKey("files/key2-" + count + ".jceks");
+			KeyPair CP = this.keyStoreManager.getKeyPair("files/key3-" + count + ".jceks");
+			KeyPair ECDSA = this.keyStoreManager.getKeyPair("files/key4-" + count + ".jceks");
+			KeyPair FD = this.keyStoreManager.getKeyPair("files/key5-" + count + ".jceks");
+			KeyPair RSA = this.keyStoreManager.getKeyPair("files/key6-" + count + ".jceks");
 			
-			for (int i = 1; i < text.toString().split(SEPARATOR).length; i++) {
-				System.out.println( text.toString().split(SEPARATOR));
+			for (int i = 0; i < 5; i++) {
+
+				FileInputStream fis = new FileInputStream("files/output" + count + "-" + i + ".txt");
+				byte[] data = new byte[fis.available()];
+				fis.read(data);
+				fis.close();
+
+				System.out.println(this.AES.descifrar(data, AES, Constants.AES));
+				System.out.println(this.clavePublica.descifrarCP(data, RSA.getPrivate()));
+				System.out.println(this.RSA.descifrarRSA(data, RSA));
+				System.out.println(this.DES.descifrar(data, DES, Constants.DES));
 			}
-			
 		}
 	}
 	
