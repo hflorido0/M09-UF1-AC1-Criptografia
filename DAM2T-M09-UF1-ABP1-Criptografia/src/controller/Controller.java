@@ -17,14 +17,13 @@ public class Controller {
 	private CriptografiaSimetrica AES;
 	private CriptografiaAsimetrica clavePublica;
 	private CriptografiaSimetrica DES;
-	private CriptografiaAsimetrica ECDSA;
-	private Hash Hash;
-	private CriptografiaAsimetrica firmaDigital;
 	private CriptografiaAsimetrica RSA;
 	private KeyStoreManager keyStoreManager;
 	
-	private static final String SEPARATOR = "#@@#";
-	
+	private CriptografiaAsimetrica ECDSA;
+	private Hash Hash;
+	private CriptografiaAsimetrica firmaDigital;
+	 
 	private static final int FILES = 2;
 	
 	private String[] randoms = {"RSA", "DES", "AES", "CP"};
@@ -33,11 +32,13 @@ public class Controller {
 		this.AES = new CriptografiaSimetrica();
 		this.clavePublica = new CriptografiaAsimetrica();
 		this.DES = new CriptografiaSimetrica();
+		this.RSA = new CriptografiaAsimetrica();
+		
+		this.keyStoreManager = new KeyStoreManager();
+
 		this.ECDSA = new CriptografiaAsimetrica();
 		this.Hash = new Hash();
 		this.firmaDigital = new CriptografiaAsimetrica();
-		this.RSA = new CriptografiaAsimetrica();
-		this.keyStoreManager = new KeyStoreManager();
 	}
 
 	public void init() {
@@ -64,17 +65,22 @@ public class Controller {
 				
 				KeyPair RSA = this.keyStoreManager.generateKeyPair(Constants.RSA);
 				KeyPair CP = this.keyStoreManager.generateKeyPair(Constants.CLAVEPUBLICA);
-				KeyPair ECDSA = this.keyStoreManager.generateKeyPair(Constants.ECDSA);
-				KeyPair FD = this.keyStoreManager.generateKeyPair(Constants.FIRMADIGITAL);
 				SecretKey DES = this.keyStoreManager.generateSecretKey(Constants.DES);
 				SecretKey AES = this.keyStoreManager.generateSecretKey(Constants.AES);
 				
+
 				this.keyStoreManager.storeSecretKey(DES, "files/key1-" + count + ".jceks");
 				this.keyStoreManager.storeSecretKey(AES, "files/key2-" + count + ".jceks");
 				this.keyStoreManager.storeKeyPair(CP,  "files/key3-" + count + ".jceks");
-				this.keyStoreManager.storeKeyPair(ECDSA,  "files/key4-" + count + ".jceks");
-				this.keyStoreManager.storeKeyPair(FD,  "files/key5-" + count + ".jceks");
-				this.keyStoreManager.storeKeyPair(RSA,  "files/key6-" + count + ".jceks");
+				this.keyStoreManager.storeKeyPair(RSA,  "files/key4-" + count + ".jceks");
+				
+				
+				//Firmas digitales TODO: not used
+				KeyPair ECDSA = this.keyStoreManager.generateKeyPair(Constants.ECDSA);
+				KeyPair FD = this.keyStoreManager.generateKeyPair(Constants.FIRMADIGITAL);
+				this.keyStoreManager.storeKeyPair(ECDSA,  "files/key5-" + count + ".jceks");
+				this.keyStoreManager.storeKeyPair(FD,  "files/key6-" + count + ".jceks");
+				
 				
 				for (int i = 0; i < toBeEncripted.split(" ").length; i++) {
 
@@ -106,6 +112,14 @@ public class Controller {
 							System.out.println(this.AES.descifrar(encripted,  AES, Constants.AES));
 							
 							break;
+						case "CP":
+
+							encripted = this.clavePublica.cifrarCP(toBeEncripted.split(" ")[i], CP.getPublic());
+							System.out.println(this.RSA.descifrarCP(encripted, CP.getPrivate()));
+							
+							break;
+							
+						//FIRMAS DIGITALES
 						case "ECDSA":
 
 							//encripted = this.ECDSA.firmar(toBeEncripted.split(" ")[i], ECDSA, Constants.ECDSA);
@@ -116,12 +130,6 @@ public class Controller {
 
 							//encripted = this.firmaDigital.firmar(toBeEncripted.split(" ")[i], FD, Constants.FIRMADIGITAL);
 							//System.out.println(this.RSA.descifrarRSA(encripted,  this.keyStoreManager.generateKeyPair(Constants.RSA)));
-							
-							break;
-						case "CP":
-
-							encripted = this.clavePublica.cifrarCP(toBeEncripted.split(" ")[i], CP.getPublic());
-							System.out.println(this.RSA.descifrarCP(encripted, CP.getPrivate()));
 							
 							break;
 					}
@@ -142,9 +150,11 @@ public class Controller {
 			SecretKey DES = this.keyStoreManager.getSecretKey("files/key1-" + count + ".jceks");
 			SecretKey AES = this.keyStoreManager.getSecretKey("files/key2-" + count + ".jceks");
 			KeyPair CP = this.keyStoreManager.getKeyPair("files/key3-" + count + ".jceks");
-			KeyPair ECDSA = this.keyStoreManager.getKeyPair("files/key4-" + count + ".jceks");
-			KeyPair FD = this.keyStoreManager.getKeyPair("files/key5-" + count + ".jceks");
-			KeyPair RSA = this.keyStoreManager.getKeyPair("files/key6-" + count + ".jceks");
+			KeyPair RSA = this.keyStoreManager.getKeyPair("files/key4-" + count + ".jceks");
+			
+			//FIRMAS DIGITALES
+			KeyPair ECDSA = this.keyStoreManager.getKeyPair("files/key5-" + count + ".jceks");
+			KeyPair FD = this.keyStoreManager.getKeyPair("files/key6-" + count + ".jceks");
 			
 			for (int i = 0; i < 5; i++) {
 
