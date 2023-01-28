@@ -13,29 +13,7 @@ import java.nio.charset.StandardCharsets;
 
 public class CriptografiaSimetrica {
 	
-	private SecretKey clave;
-	private String algoritmo;
-	
-	public void init(String algoritmo) {
-		this.algoritmo = algoritmo;
-		KeyGenerator keyGenerator;
-		try {
-			keyGenerator = KeyGenerator.getInstance(algoritmo);
-			if (this.algoritmo.equals(Constants.DES))
-				keyGenerator.init(new SecureRandom());
-			else 
-				keyGenerator.init(128, new SecureRandom());
-			clave = keyGenerator.generateKey();
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	public void init(String algoritmo, String clave) {
-		this.clave = new SecretKeySpec(clave.getBytes(), algoritmo);
-	}
-	
-	public String cifrarAES(String texto) throws Exception {
+	public String cifrar(String texto, SecretKey clave, String algoritmo) throws Exception {
 		// Crear un objeto Cipher para cifrar
 		Cipher cipher = Cipher.getInstance(algoritmo);
 		cipher.init(Cipher.ENCRYPT_MODE, clave);
@@ -45,7 +23,7 @@ public class CriptografiaSimetrica {
 		return new String(textoCifrado);
 	}
 
-	public String descifrarAES(String textoCifrado) throws Exception {
+	public String descifrar(String textoCifrado, SecretKey clave, String algoritmo) throws Exception {
 		// Crear un objeto Cipher para descifrar
 		Cipher cipher = Cipher.getInstance(algoritmo);
 		cipher.init(Cipher.DECRYPT_MODE, clave);

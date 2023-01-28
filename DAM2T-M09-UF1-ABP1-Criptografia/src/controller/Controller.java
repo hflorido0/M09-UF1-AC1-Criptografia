@@ -1,103 +1,119 @@
 package controller;
 
-import java.util.ArrayList;
+import java.security.KeyPair;
 import java.util.Random;
 
+import javax.crypto.SecretKey;
+
+import dao.KeyStoreManager;
 import dao.Reader;
 import dao.Writter;
+import security.CriptografiaAsimetrica;
 import security.CriptografiaSimetrica;
-import security.ClavePublica;
-import security.Criptografia;
-import security.ECDSA;
-import security.FirmaDigital;
 import security.Hash;
-import security.RSA;
 import utils.Constants;
 
 public class Controller {
 	private CriptografiaSimetrica AES;
-	private ClavePublica clavePublica;
+	private CriptografiaAsimetrica clavePublica;
 	private CriptografiaSimetrica DES;
-	private ECDSA ECDSA;
+	private CriptografiaAsimetrica ECDSA;
 	private Hash Hash;
-	private FirmaDigital firmaDigital;
-	private RSA RSA;
+	private CriptografiaAsimetrica firmaDigital;
+	private CriptografiaAsimetrica RSA;
+	private KeyStoreManager keyStoreManager;
 	
-	private static final int LOOPS = 16;
+	private static final String SEPARATOR = "#@@#";
+	
 	private static final int FILES = 2;
-	private static final String HASTAG = "#";
 	
-	private String[] randoms = {"#RSA#", "#DES#", "#AES#", "#ECDSA#", "#FD#", "#CP#"};
-	private ArrayList<Criptografia> criptografia;
+	private String[] randoms = {"RSA", "DES", "AES", "ECDSA", "FD", "CP"};
 	
 	public Controller() {
 		this.AES = new CriptografiaSimetrica();
-		this.clavePublica = new ClavePublica();
+		this.clavePublica = new CriptografiaAsimetrica();
 		this.DES = new CriptografiaSimetrica();
-		this.ECDSA = new ECDSA();
+		this.ECDSA = new CriptografiaAsimetrica();
 		this.Hash = new Hash();
-		this.firmaDigital = new FirmaDigital();
-		this.RSA = new RSA();
-		this.criptografia = new ArrayList<>();
-		//this.criptografia.add(this.RSA);
+		this.firmaDigital = new CriptografiaAsimetrica();
+		this.RSA = new CriptografiaAsimetrica();
+		this.keyStoreManager = new KeyStoreManager();
 	}
 
 	public void init() {
 		String toBeEncripted = "Esto es un mensaje encriptado";
 		generateEncriptedDocuments(toBeEncripted);
+		//decodeEncriptedDocument();
 	}
 	
 	public void generateEncriptedDocuments(String toBeEncripted) {
 		
-		this.RSA.init();
-		this.firmaDigital.init();
-		this.ECDSA.init();
-		this.DES.init(Constants.DES);
-		this.clavePublica.init();
-		this.AES.init(Constants.AES);
 		
 		Random random = new Random();
 		
 		try {
-			for (int count = 1; count < FILES; count++) {
+			for (int count = 1; count <= FILES; count++) {
 				Writter writer = new Writter("files/output" + count + ".txt");
 				StringBuilder result = new StringBuilder();
+				StringBuilder keys = new StringBuilder();
 				
-				for (int i = 0; i < LOOPS; i++) {
+				for (int i = 0; i < toBeEncripted.split(" ").length; i++) {
 	
 					int rand = random.nextInt(randoms.length);
 					String algoritmo = randoms[rand];
 					
-					result.append(algoritmo);
-					result.append(HASTAG);
+					KeyPair RSA = this.keyStoreManager.generateKeyPair(Constants.RSA);
+					KeyPair CP = this.keyStoreManager.generateKeyPair(Constants.CLAVEPUBLICA);
+					KeyPair ECDSA = this.keyStoreManager.generateKeyPair(Constants.ECDSA);
+					KeyPair FD = this.keyStoreManager.generateKeyPair(Constants.FIRMADIGITAL);
+					SecretKey DES = this.keyStoreManager.generateSecretKey(Constants.DES);
+					SecretKey AES = this.keyStoreManager.generateSecretKey(Constants.AES);
+					
+					this.keyStoreManager.storeSecretKey(DES, "files/key1-" + count + ".jceks");
+					this.keyStoreManager.storeSecretKey(AES, "files/key2-" + count + ".jceks");
+					this.keyStoreManager.storeKeyPair(CP,  "files/key3-" + count + ".jceks");
+					this.keyStoreManager.storeKeyPair(ECDSA,  "files/key4-" + count + ".jceks");
+					this.keyStoreManager.storeKeyPair(FD,  "files/key5-" + count + ".jceks");
+					this.keyStoreManager.storeKeyPair(RSA,  "files/key6-" + count + ".jceks");
+					
 					
 					switch (algoritmo) {
-						case "#RSA#": 
+						case "RSA": 
 	
-							result.append(this.RSA.cifrarRSA(toBeEncripted));
-							result.append(HASTAG);
-							result.append(this.RSA.getClaves());
-							result.append(algoritmo);
+							result.append(this.RSA.cifrarRSA(toBeEncripted.split(" ")[i], RSA) + SEPARATOR);
 							
 							break;
-						case "#DES#":
+						case "DES":
+
+							result.append(this.DES.cifrar(toBeEncripted.split(" ")[i], DES, Constants.DES) + SEPARATOR);
 							
 							break;
-						case "#AES#":
+						case "AES":
+
+							result.append(this.AES.cifrar(toBeEncripted.split(" ")[i], AES, Constants.AES) + SEPARATOR);
 							
 							break;
-						case "#ECDSA#":
+						case "ECDSA":
+
+							result.append(this.ECDSA.firmar(toBeEncripted.split(" ")[i], ECDSA, Constants.ECDSA) + SEPARATOR);
 							
 							break;
-						case "#FD#":
+						case "FD":
+
+							result.append(this.firmaDigital.firmar(toBeEncripted.split(" ")[i], FD, Constants.FIRMADIGITAL) + SEPARATOR);
 							
 							break;
-						case "#CP#":
+						case "CP":
+
+							result.append(this.clavePublica.cifrarCP(toBeEncripted.split(" ")[i], CP) + SEPARATOR);
 							
 							break;
 					}
 					
 				}
+				writer.write(keys.toString());
+				writer.write(result.toString());
+				writer.closeFile();
 			}
 		}catch (Exception e) {
 			e.printStackTrace();
@@ -105,12 +121,25 @@ public class Controller {
 	}
 	
 	private void decodeEncriptedDocument() {
-		for (int count = 1; count < FILES; count++) {
+		for (int count = 1; count <= FILES; count++) {
 			Reader reader = new Reader("files/output" + count + ".txt");
 			
-			for (int i = 0; i < LOOPS; i++) {
-				
+			StringBuilder text = new StringBuilder();
+			String line = "";
+			
+			while (( line = reader.read()) != null) {
+				text.append(line);
 			}
+			
+			String keys = text.toString().split(SEPARATOR)[0];
+			
+			String[] values = keys.split("--->");
+
+			
+			for (int i = 1; i < text.toString().split(SEPARATOR).length; i++) {
+				System.out.println( text.toString().split(SEPARATOR));
+			}
+			
 		}
 	}
 	
