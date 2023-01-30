@@ -25,8 +25,16 @@ public class Controller {
 	private CriptografiaAsimetrica firmaDigital;
 	 
 	private static final int FILES = 2;
+	private static final int LOOPS = 12;
+	private static final String SEPARADOR = "#@@#";
 	
-	private String[] randoms = {"RSA", "DES", "AES", "CP"};
+	private SecretKey LDES;
+	private SecretKey LAES;
+	private KeyPair LCP;
+	private KeyPair LRSA;
+	
+	//private String[] randoms = {"RSA", "DES", "AES", "CP"};
+	private String[] randoms = { "AES"};
 	
 	public Controller() {
 		this.AES = new CriptografiaSimetrica();
@@ -44,7 +52,9 @@ public class Controller {
 	public void init() {
 		String toBeEncripted = "Esto es un mensaje encriptado";
 		try {
-			generateEncriptedDocuments(toBeEncripted);
+			//generateEncriptedDocuments(toBeEncripted);
+			//decodeEncriptedDocument();
+			generateMultiencriptedDocument(toBeEncripted);
 			decodeEncriptedDocument();
 			System.out.println("FINISHED");
 		} catch (Exception e) {
@@ -53,6 +63,7 @@ public class Controller {
 		}
 	}
 	
+	/*
 	public void generateEncriptedDocuments(String toBeEncripted) {
 		
 		
@@ -144,6 +155,7 @@ public class Controller {
 		}
 	}
 	
+	
 	private void decodeEncriptedDocument() throws Exception {
 		for (int count = 1; count <= FILES; count++) {
 
@@ -169,6 +181,133 @@ public class Controller {
 				System.out.println(this.DES.descifrar(data, DES, Constants.DES));
 			}
 		}
+	}
+	*/
+
+	public void generateMultiencriptedDocument(String toBeEncripted) {
+		
+		
+		Random random = new Random();
+		
+		try {
+			for (int count = 1; count <= FILES; count++) {
+				
+				StringBuilder result = new StringBuilder();
+				
+				KeyPair RSA = this.keyStoreManager.generateKeyPair(Constants.RSA);
+				KeyPair CP = this.keyStoreManager.generateKeyPair(Constants.CLAVEPUBLICA);
+				SecretKey DES = this.keyStoreManager.generateSecretKey(Constants.DES);
+				SecretKey AES = this.keyStoreManager.generateSecretKey(Constants.AES);
+				
+
+				this.keyStoreManager.storeSecretKey(DES, "files/key1-" + count + ".jceks");
+				this.keyStoreManager.storeSecretKey(AES, "files/key2-" + count + ".jceks");
+				this.keyStoreManager.storeKeyPair(CP,  "files/key3-" + count + ".jceks");
+				this.keyStoreManager.storeKeyPair(RSA,  "files/key4-" + count + ".jceks");
+				
+
+				FileOutputStream fos = new FileOutputStream("files/output" + count + ".txt");
+				byte[] encripted = this.RSA.cifrarRSA(toBeEncripted.getBytes(), RSA);
+				
+				for (int i = 0; i < LOOPS; i++) {
+	
+					int rand = random.nextInt(randoms.length);
+					String algoritmo = randoms[rand];
+					
+					switch (algoritmo) {
+						case "RSA": 
+							
+							encripted = this.RSA.cifrarRSA(encripted, RSA);
+							break;
+						case "DES":
+
+							encripted = this.DES.cifrar(encripted, DES, Constants.DES);
+							break;
+						case "AES":
+
+							encripted = this.AES.cifrar(encripted, AES, Constants.AES);
+							break;
+						case "CP":
+
+							encripted = this.clavePublica.cifrarCP(encripted, CP.getPublic());
+							break;
+					}
+				}
+				System.out.println("-------------");
+				
+				fos.write(encripted);
+				fos.close();
+			}
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void decodeEncriptedDocument() throws Exception {
+		for (int count = 1; count <= FILES; count++) {
+
+			LDES = this.keyStoreManager.getSecretKey("files/key1-" + count + ".jceks");
+			LAES = this.keyStoreManager.getSecretKey("files/key2-" + count + ".jceks");
+			LCP = this.keyStoreManager.getKeyPair("files/key3-" + count + ".jceks");
+			LRSA = this.keyStoreManager.getKeyPair("files/key4-" + count + ".jceks");
+			
+			//FIRMAS DIGITALES
+			KeyPair ECDSA = this.keyStoreManager.getKeyPair("files/key5-" + count + ".jceks");
+			KeyPair FD = this.keyStoreManager.getKeyPair("files/key6-" + count + ".jceks");
+			
+
+			FileInputStream fis = new FileInputStream("files/output" + count + ".txt");
+			byte[] data = new byte[fis.available()];
+			
+			fis.read(data);
+			fis.close();
+				
+			System.out.println(new String(recursiva(data, LOOPS)));
+		}
+	}
+	
+	public byte[] recursiva (byte[] data, int loops) throws Exception {
+		byte[] dataAux;
+		
+		if (loops == LOOPS) {
+			return null;
+		} else {
+			
+			dataAux = this.AES.descifrar(data, LAES, Constants.AES);
+			if (new String(dataAux).matches("[a-zA-Z]+")) {
+				return dataAux;
+			} else {
+				if (recursiva(dataAux, loops+1) != null)
+					return dataAux;
+			}
+			
+			dataAux = this.clavePublica.descifrarCP(data, LRSA.getPrivate());
+			if (new String(dataAux).matches("[a-zA-Z]+")) {
+				return dataAux;
+			} else {
+				if (recursiva(dataAux, loops+1) != null)
+					return dataAux;
+			}
+			
+			dataAux = this.RSA.descifrarRSA(data, LRSA);
+			if (new String(dataAux).matches("[a-zA-Z]+")) {
+				return dataAux;
+			} else {
+				if (recursiva(dataAux, loops+1) != null)
+					return dataAux;
+			}
+			
+			dataAux = this.DES.descifrar(data, LDES, Constants.DES);
+			if (new String(dataAux).matches("[a-zA-Z]+")) {
+				return dataAux;
+			} else {
+				if (recursiva(dataAux, loops+1) != null)
+					return dataAux;
+			}
+		}
+		
+		return null;
+		
 	}
 	
 }

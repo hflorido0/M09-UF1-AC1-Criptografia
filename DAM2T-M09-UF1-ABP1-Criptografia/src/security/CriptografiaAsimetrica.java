@@ -32,17 +32,17 @@ public class CriptografiaAsimetrica {
 		return firma.verify(firmaDigital.getBytes(StandardCharsets.UTF_8));
 	}
 
-	public byte[] cifrarRSA(String texto, KeyPair claves) throws Exception {
+	public byte[] cifrarRSA(byte[] texto, KeyPair claves) throws Exception {
 		// Crear un objeto Cipher para cifrar
 		Cipher cipher = Cipher.getInstance(Constants.RSA);
 		cipher.init(Cipher.ENCRYPT_MODE, claves.getPublic());
 
 		// Cifrar el texto
-		byte[] textoCifrado = cipher.doFinal(texto.getBytes(StandardCharsets.UTF_8));
+		byte[] textoCifrado = cipher.doFinal(texto);
 		return textoCifrado;
 	}
 
-	public String descifrarRSA(byte[] textoCifrado, KeyPair claves) {
+	public byte[] descifrarRSA(byte[] textoCifrado, KeyPair claves) {
 		// Crear un objeto Cipher para descifrar
 
 		try {
@@ -51,14 +51,14 @@ public class CriptografiaAsimetrica {
 
 			// Descifrar el texto
 			byte[] textoDescifrado = cipher.doFinal(textoCifrado);
-			return new String(textoDescifrado);
+			return textoDescifrado;
 		} catch (Exception e) {
 			//System.out.println("ERROR desencriptando");
 		}
-		return "";
+		return null;
 	}
 
-	public byte[] cifrarCP(String texto, PublicKey claves) throws Exception {
+	public byte[] cifrarCP(byte[] texto, PublicKey claves) throws Exception {
 		// Generar una clave simétrica AES
 		KeyGenerator keyGen = KeyGenerator.getInstance(Constants.AES);
 		keyGen.init(256);
@@ -76,7 +76,7 @@ public class CriptografiaAsimetrica {
 		cipher.init(Cipher.ENCRYPT_MODE, claveSimetrica);
 
 		// Cifrar el texto
-		byte[] textoCifrado = cipher.doFinal(texto.getBytes());
+		byte[] textoCifrado = cipher.doFinal(texto);
 
 		// Concatenar el envoltorio de clave con el texto cifrado
 		byte[] resultado = new byte[claveEnvoltorio.length + textoCifrado.length];
@@ -86,7 +86,7 @@ public class CriptografiaAsimetrica {
 		return resultado;
 	}
 
-	public String descifrarCP(byte[] datosCifrados, PrivateKey claves) {
+	public byte[] descifrarCP(byte[] datosCifrados, PrivateKey claves) {
 		// Obtener el envoltorio de clave
 
 		try {
@@ -112,11 +112,11 @@ public class CriptografiaAsimetrica {
 
 			// Descifrar el texto
 			byte[] textoDescifrado = cipher.doFinal(textoCifrado);
-			return new String(textoDescifrado);
+			return textoDescifrado;
 		} catch (Exception e) {
 			//System.out.println("ERROR desencriptando");
 		}
-		return "";
+		return null;
 	}
 
 }
