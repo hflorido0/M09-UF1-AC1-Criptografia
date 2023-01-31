@@ -19,14 +19,9 @@ public class Controller {
 	private CriptografiaSimetrica DES;
 	private CriptografiaAsimetrica RSA;
 	private KeyStoreManager keyStoreManager;
-	
-	private CriptografiaAsimetrica ECDSA;
-	private Hash Hash;
-	private CriptografiaAsimetrica firmaDigital;
 	 
-	private static final int FILES = 2;
-	private static final int LOOPS = 12;
-	private static final String SEPARADOR = "#@@#";
+	private static final int FILES = 25;
+	private static final int LOOPS = 10;
 	
 	private SecretKey LDES;
 	private SecretKey LAES;
@@ -34,7 +29,35 @@ public class Controller {
 	private KeyPair LRSA;
 	
 	//private String[] randoms = {"RSA", "DES", "AES", "CP"};
-	private String[] randoms = { "AES"};
+	private String[] randoms = { "DES", "AES", "CP"};
+	
+	private String[] toBeEncripted = {
+			"Hay una fuerza motriz mas poderosa que el vapor la electricidad y la energia atomica la voluntad", 
+			"El mundo no esta en peligro por las malas personas sino por aquellas que permiten la maldad",
+			"Comienza a manifestarse la madurez cuando sentimos que nuestra preocupacion es mayor por los demas que por nosotros mismos",
+			"Si buscas resultados distintos no hagas siempre lo mismo",
+			"La vida es muy peligrosa No por las personas que hacen el mal sino por las que se sientan a ver lo que pasa",
+			"Es un milagro que la curiosidad sobreviva a la educacion reglada",
+			"Al principio todos los pensamientos pertenecen al amor Despues todo el amor pertenece a los pensamientos",
+			"Los grandes espiritus siempre han encontrado una violenta oposicion de parte de mentes mediocres",
+			"El hombre encuentra a Dios detras de cada puerta que la ciencia logra abrir",
+			"Cuando me preguntaron sobre algun arma capaz de contrarrestar el poder de la bomba atomica yo sugeri la mejor de todas La paz",
+			"Una velada en que todos los presentes esten absolutamente de acuerdo es una velada perdida",
+			"En los momentos de crisis solo la imaginacion es mas importante que el conocimiento",
+			"Si tu intencion es describir la verdad hazlo con sencillez y la elegancia dejasela al sastre",
+			"Hay dos maneras de vivir su vida una como si nada es un milagro la otra es como si todo es un milagro",
+			"Los ideales que iluminan mi camino y una y otra vez me han dado coraje para enfrentar la vida con alegria han sido la amabilidad la belleza y la verdad",
+			"Triste epoca la nuestra Es mas facil desintegrar un atomo que un prejuicio",
+			"Hay dos cosas infinitas el Universo y la estupidez humana Y del Universo no estoy seguro",
+			"Todos somos muy ignorantes Lo que ocurre es que no todos ignoramos las mismas cosas",
+			"Si tu intencion es describir la verdad hazlo con sencillez y la elegancia dejasela al sastre",
+			"Intenta no volverte un hombre de exito sino volverte un hombre de valor",
+			"Dar ejemplo no es la principal manera de influir sobre los demas es la unica manera",
+			"Nunca consideres el estudio como una obligacion sino como una oportunidad para penetrar en el bello y maravilloso mundo del saber",
+			"Cada dia sabemos mas y entendemos menos",
+			"Vivimos en el mundo cuando amamos Solo una vida vivida para los demas merece la pena ser vivida",
+			"El problema del hombre no esta en la bomba atomica sino en su corazon",
+			};
 	
 	public Controller() {
 		this.AES = new CriptografiaSimetrica();
@@ -43,18 +66,11 @@ public class Controller {
 		this.RSA = new CriptografiaAsimetrica();
 		
 		this.keyStoreManager = new KeyStoreManager();
-
-		this.ECDSA = new CriptografiaAsimetrica();
-		this.Hash = new Hash();
-		this.firmaDigital = new CriptografiaAsimetrica();
 	}
 
 	public void init() {
-		String toBeEncripted = "Esto es un mensaje encriptado";
 		try {
-			//generateEncriptedDocuments(toBeEncripted);
-			//decodeEncriptedDocument();
-			generateMultiencriptedDocument(toBeEncripted);
+			generateMultiencriptedDocument();
 			decodeEncriptedDocument();
 			System.out.println("FINISHED");
 		} catch (Exception e) {
@@ -63,128 +79,7 @@ public class Controller {
 		}
 	}
 	
-	/*
-	public void generateEncriptedDocuments(String toBeEncripted) {
-		
-		
-		Random random = new Random();
-		
-		try {
-			for (int count = 1; count <= FILES; count++) {
-				
-				StringBuilder result = new StringBuilder();
-				
-				KeyPair RSA = this.keyStoreManager.generateKeyPair(Constants.RSA);
-				KeyPair CP = this.keyStoreManager.generateKeyPair(Constants.CLAVEPUBLICA);
-				SecretKey DES = this.keyStoreManager.generateSecretKey(Constants.DES);
-				SecretKey AES = this.keyStoreManager.generateSecretKey(Constants.AES);
-				
-
-				this.keyStoreManager.storeSecretKey(DES, "files/key1-" + count + ".jceks");
-				this.keyStoreManager.storeSecretKey(AES, "files/key2-" + count + ".jceks");
-				this.keyStoreManager.storeKeyPair(CP,  "files/key3-" + count + ".jceks");
-				this.keyStoreManager.storeKeyPair(RSA,  "files/key4-" + count + ".jceks");
-				
-				
-				//Firmas digitales TODO: not used
-				KeyPair ECDSA = this.keyStoreManager.generateKeyPair(Constants.ECDSA);
-				KeyPair FD = this.keyStoreManager.generateKeyPair(Constants.FIRMADIGITAL);
-				this.keyStoreManager.storeKeyPair(ECDSA,  "files/key5-" + count + ".jceks");
-				this.keyStoreManager.storeKeyPair(FD,  "files/key6-" + count + ".jceks");
-				
-				
-				for (int i = 0; i < toBeEncripted.split(" ").length; i++) {
-
-					FileOutputStream fos = new FileOutputStream("files/output" + count + "-" + i + ".txt");
-	
-					int rand = random.nextInt(randoms.length);
-					String algoritmo = randoms[rand];
-					
-					byte[] encripted = new byte[] {};
-					System.out.println(algoritmo);
-					
-					switch (algoritmo) {
-						case "RSA": 
-							
-							encripted = this.RSA.cifrarRSA(toBeEncripted.split(" ")[i], RSA);
-							System.out.println(this.RSA.descifrarRSA(encripted, RSA));
-							break;
-						case "DES":
-
-							encripted = this.DES.cifrar(toBeEncripted.split(" ")[i], DES, Constants.DES);
-							System.out.println(encripted);
-							System.out.println(this.DES.descifrar(encripted, DES, Constants.DES));
-							
-							break;
-						case "AES":
-
-							encripted = this.AES.cifrar(toBeEncripted.split(" ")[i], AES, Constants.AES);
-							System.out.println(encripted);
-							System.out.println(this.AES.descifrar(encripted,  AES, Constants.AES));
-							
-							break;
-						case "CP":
-
-							encripted = this.clavePublica.cifrarCP(toBeEncripted.split(" ")[i], CP.getPublic());
-							System.out.println(this.RSA.descifrarCP(encripted, CP.getPrivate()));
-							
-							break;
-							
-						//FIRMAS DIGITALES
-						case "ECDSA":
-
-							//encripted = this.ECDSA.firmar(toBeEncripted.split(" ")[i], ECDSA, Constants.ECDSA);
-							//System.out.println(this.RSA.descifrarRSA(encripted,  this.keyStoreManager.generateKeyPair(Constants.RSA)));
-							
-							break;
-						case "FD":
-
-							//encripted = this.firmaDigital.firmar(toBeEncripted.split(" ")[i], FD, Constants.FIRMADIGITAL);
-							//System.out.println(this.RSA.descifrarRSA(encripted,  this.keyStoreManager.generateKeyPair(Constants.RSA)));
-							
-							break;
-					}
-					
-					fos.write(encripted);
-					fos.close();
-				}
-				System.out.println("-------------");
-			}
-		}catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
-	
-	private void decodeEncriptedDocument() throws Exception {
-		for (int count = 1; count <= FILES; count++) {
-
-			SecretKey DES = this.keyStoreManager.getSecretKey("files/key1-" + count + ".jceks");
-			SecretKey AES = this.keyStoreManager.getSecretKey("files/key2-" + count + ".jceks");
-			KeyPair CP = this.keyStoreManager.getKeyPair("files/key3-" + count + ".jceks");
-			KeyPair RSA = this.keyStoreManager.getKeyPair("files/key4-" + count + ".jceks");
-			
-			//FIRMAS DIGITALES
-			KeyPair ECDSA = this.keyStoreManager.getKeyPair("files/key5-" + count + ".jceks");
-			KeyPair FD = this.keyStoreManager.getKeyPair("files/key6-" + count + ".jceks");
-			
-			for (int i = 0; i < 5; i++) {
-
-				FileInputStream fis = new FileInputStream("files/output" + count + "-" + i + ".txt");
-				byte[] data = new byte[fis.available()];
-				fis.read(data);
-				fis.close();
-
-				System.out.println(this.AES.descifrar(data, AES, Constants.AES));
-				System.out.println(this.clavePublica.descifrarCP(data, RSA.getPrivate()));
-				System.out.println(this.RSA.descifrarRSA(data, RSA));
-				System.out.println(this.DES.descifrar(data, DES, Constants.DES));
-			}
-		}
-	}
-	*/
-
-	public void generateMultiencriptedDocument(String toBeEncripted) {
+	public void generateMultiencriptedDocument() {
 		
 		
 		Random random = new Random();
@@ -207,7 +102,7 @@ public class Controller {
 				
 
 				FileOutputStream fos = new FileOutputStream("files/output" + count + ".txt");
-				byte[] encripted = this.RSA.cifrarRSA(toBeEncripted.getBytes(), RSA);
+				byte[] encripted = this.RSA.cifrarRSA(toBeEncripted[count-1].getBytes(), RSA);
 				
 				for (int i = 0; i < LOOPS; i++) {
 	
@@ -249,12 +144,7 @@ public class Controller {
 			LDES = this.keyStoreManager.getSecretKey("files/key1-" + count + ".jceks");
 			LAES = this.keyStoreManager.getSecretKey("files/key2-" + count + ".jceks");
 			LCP = this.keyStoreManager.getKeyPair("files/key3-" + count + ".jceks");
-			LRSA = this.keyStoreManager.getKeyPair("files/key4-" + count + ".jceks");
-			
-			//FIRMAS DIGITALES
-			KeyPair ECDSA = this.keyStoreManager.getKeyPair("files/key5-" + count + ".jceks");
-			KeyPair FD = this.keyStoreManager.getKeyPair("files/key6-" + count + ".jceks");
-			
+			LRSA = this.keyStoreManager.getKeyPair("files/key4-" + count + ".jceks");			
 
 			FileInputStream fis = new FileInputStream("files/output" + count + ".txt");
 			byte[] data = new byte[fis.available()];
@@ -262,51 +152,36 @@ public class Controller {
 			fis.read(data);
 			fis.close();
 				
-			System.out.println(new String(recursiva(data, LOOPS)));
+			System.out.println(new String(recursiva(data, 0)));
 		}
 	}
 	
 	public byte[] recursiva (byte[] data, int loops) throws Exception {
 		byte[] dataAux;
 		
-		if (loops == LOOPS) {
+		if (loops > LOOPS + 1) {
+			
 			return null;
+			
+		} else if (data != null && new String(data).replace(" ","").matches("[a-zA-Z]+")) {
+			
+			return data;
+			
 		} else {
 			
-			dataAux = this.AES.descifrar(data, LAES, Constants.AES);
-			if (new String(dataAux).matches("[a-zA-Z]+")) {
-				return dataAux;
-			} else {
-				if (recursiva(dataAux, loops+1) != null)
-					return dataAux;
-			}
-			
-			dataAux = this.clavePublica.descifrarCP(data, LRSA.getPrivate());
-			if (new String(dataAux).matches("[a-zA-Z]+")) {
-				return dataAux;
-			} else {
-				if (recursiva(dataAux, loops+1) != null)
-					return dataAux;
-			}
-			
-			dataAux = this.RSA.descifrarRSA(data, LRSA);
-			if (new String(dataAux).matches("[a-zA-Z]+")) {
-				return dataAux;
-			} else {
-				if (recursiva(dataAux, loops+1) != null)
-					return dataAux;
-			}
-			
-			dataAux = this.DES.descifrar(data, LDES, Constants.DES);
-			if (new String(dataAux).matches("[a-zA-Z]+")) {
-				return dataAux;
-			} else {
-				if (recursiva(dataAux, loops+1) != null)
-					return dataAux;
+			dataAux = recursiva(this.AES.descifrar(data, LAES, Constants.AES), loops+1);
+			if (dataAux == null) {
+				dataAux = recursiva(this.clavePublica.descifrarCP(data, LCP.getPrivate()), loops+1);
+				if (dataAux == null) {
+					dataAux = recursiva(this.RSA.descifrarRSA(data, LRSA), loops+1);
+					if (dataAux == null) {
+						dataAux = recursiva(this.DES.descifrar(data, LDES, Constants.DES), loops+1);
+					}
+				}
 			}
 		}
 		
-		return null;
+		return dataAux;
 		
 	}
 	
